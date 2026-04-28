@@ -11,7 +11,7 @@
 //   - git grep (fine to use)
 //   - Explicit non-code file type flags: -t yaml, --type json, etc.
 //   - --include=*.proto / *.yaml / *.sql / *.md etc.
-//   - Searches in vendor/, testdata/, docs/, migrations/, .claude/
+//   - Searches in Go module cache (pkg/mod), testdata/, docs/, migrations/, .claude/
 //   - Quoted string patterns (log messages, error strings)
 //   - rg on non-Go file type flags
 
@@ -25,7 +25,7 @@ const NON_CODE_INCLUDE =
 const NON_CODE_GLOB_FLAG =
   /-g\s+['"]?\*?\.(yaml|yml|json|toml|xml|sql|md|sh|proto|txt|csv)['"]?/i;
 const NON_CODE_PATHS =
-  /\b(vendor|testdata|\.claude|\.git|\.task|docs?|migrations?|scripts?)\b/i;
+  /(pkg\/mod|testdata|\.claude|\.git|\.task|docs?|migrations?|scripts?)\b/i;
 
 // Pattern extraction: try quoted then unquoted symbol
 const PATTERN_RE = [

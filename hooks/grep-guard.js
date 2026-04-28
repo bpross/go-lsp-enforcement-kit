@@ -8,7 +8,7 @@
 //
 // Allowed through:
 //   - Non-code file globs (.md, .yaml, .sql, .proto, .json, ...)
-//   - Searches in vendor/, testdata/, .claude/, .git/, docs/
+//   - Searches in Go module cache (pkg/mod), testdata/, .claude/, .git/, docs/
 //   - Short patterns (<3 chars)
 //   - Quoted string literals
 //   - SCREAMING_SNAKE constants
@@ -18,7 +18,7 @@ const { extractGoSymbols } = require('./lib/go-symbols');
 const { buildSuggestion, buildBlockResponse } = require('./lib/lsp-suggest');
 
 const NON_CODE_GLOBS = /\.(md|txt|log|json|jsonc|yaml|yml|toml|xml|sql|sh|proto|env|csv|html|mod|sum|lock)$/i;
-const NON_CODE_PATHS = /(vendor|testdata|\.claude|\.git|\.task|docs?|migrations?|scripts?)\b/i;
+const NON_CODE_PATHS = /(pkg\/mod|testdata|\.claude|\.git|\.task|docs?|migrations?|scripts?)\b/i;
 
 let raw = '';
 process.stdin.setEncoding('utf8');
