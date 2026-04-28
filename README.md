@@ -1,8 +1,7 @@
 # go-lsp-enforcement-kit
 
-Claude Code hooks that redirect Go code symbol searches to the built-in LSP
-tool instead of `rg`/`Grep`. Keeps your AI-assisted navigation fast and
-precise — gopls already knows where everything is.
+Hooks and instructions that redirect Go code symbol searches to the LSP tool
+instead of `rg`/`Grep`. Works across Claude Code, Codex, and opencode.
 
 ## What it does
 
@@ -17,10 +16,25 @@ precise — gopls already knows where everything is.
 | Either | Go module cache (`pkg/mod`) | ✅ Allowed |
 | Bash | `git grep` | ✅ Allowed |
 
+## Agent support
+
+| Agent | Mechanism | Config written |
+|-------|-----------|---------------|
+| **Claude Code** | `PreToolUse` hooks on `Grep` + `Bash` | `~/.claude/settings.json` |
+| **Codex** | `PreToolUse` hook on `Bash` | `~/.codex/hooks.json` |
+| **opencode** | `SKILL.md` instruction file | `~/.config/opencode/opencode.jsonc` |
+
+All three agents read hook scripts from the same location: `~/.claude/hooks/go-lsp/`.
+
+Claude Code and Codex enforce the rule programmatically (the hook script blocks
+the tool call and explains what to use instead). opencode receives it as an
+instruction via its skills system, since opencode does not have a script-hook
+system.
+
 ## Requirements
 
-- **Node.js** (any recent version — hooks are plain JS with no dependencies)
-- **Claude Code** with the `gopls-lsp@claude-plugins-official` plugin enabled
+- **Node.js** (any recent version — hooks are plain JS with no npm dependencies)
+- **gopls** configured for your project (Claude Code: `gopls-lsp@claude-plugins-official` plugin)
 
 ## Install
 
@@ -30,10 +44,8 @@ cd go-lsp-enforcement-kit
 bash install.sh
 ```
 
-Restart Claude Code (or open `/hooks`) to activate.
-
-The installer safely merges into your existing `~/.claude/settings.json` —
-it will not overwrite or remove any other hooks you have configured.
+Restart each agent to activate. The installer safely merges into existing
+config files without overwriting anything else.
 
 ## Uninstall
 
@@ -43,27 +55,31 @@ bash uninstall.sh
 
 ## How it works
 
-Two `PreToolUse` hooks intercept tool calls before they execute:
+### Claude Code + Codex
 
-- **`grep-guard.js`** — fires on the built-in `Grep` tool
+Two `PreToolUse` hook scripts intercept tool calls before they execute:
+
+- **`grep-guard.js`** — fires on Claude Code's built-in `Grep` tool
 - **`bash-guard.js`** — fires on `Bash` commands that invoke `rg` or `grep`
 
 Both share `lib/go-symbols.js` (symbol detection) and `lib/lsp-suggest.js`
-(suggestion builder). Hook files are installed to `~/.claude/hooks/go-lsp/`.
+(suggestion builder). Scripts are installed to `~/.claude/hooks/go-lsp/` and
+referenced from each agent's config.
 
-A rule file (`rules/go-lsp-first.md`) is copied to `~/.claude/rules/` and
-injected into Claude's context to reinforce the LSP-first behaviour.
+### opencode
+
+opencode has no script-hook system, so the kit installs a `SKILL.md` file
+to `~/.config/opencode/skills/go-lsp-first/` and registers it in
+`opencode.jsonc`. The skill injects Go LSP-first instructions into every session.
 
 ## For agents installing this kit
 
-If you are a Claude agent helping a developer set up this kit, follow these steps:
+If you are an AI agent helping a developer set up this kit:
 
-1. **Check prerequisites**
+1. **Check Node.js is available**
    ```bash
-   node --version   # must be present
+   node --version
    ```
-   Confirm `gopls-lsp@claude-plugins-official` is enabled in
-   `~/.claude/settings.json` under `enabledPlugins`.
 
 2. **Clone and install**
    ```bash
@@ -72,27 +88,26 @@ If you are a Claude agent helping a developer set up this kit, follow these step
    bash install.sh
    ```
 
-3. **Verify the install output** — it should report:
+3. **Verify the install output** — it should end with:
    ```
-   Hook files:    4/4
-   Rule file:     yes
+   Hook files (shared):  4/4
+   Claude Code rule:     yes
+   Codex hooks.json:     yes
+   opencode SKILL.md:    yes
    ```
 
-4. **Tell the user to restart Claude Code** (or open `/hooks` in the UI) to
-   activate the hooks. Hooks do not hot-reload in a running session.
+4. **Tell the user to restart each agent** to activate. Hooks do not hot-reload
+   in a running session. For Claude Code, opening `/hooks` also reloads config.
 
-5. **Do not modify `~/.claude/settings.json` manually** — the installer
-   handles JSON merging safely via Node.js. Direct edits risk breaking the
-   JSON structure.
+5. **Do not edit the JSON config files manually** — the installer merges safely
+   via Node.js. Direct edits to JSONC files can break comment stripping.
 
 ## Customising the allow-list
 
-To permit additional paths or file types, edit the constants at the top of
-`hooks/grep-guard.js` and `hooks/bash-guard.js`, then re-run `bash install.sh`
-to sync the updated files to `~/.claude/hooks/go-lsp/`.
+Edit the constants at the top of `hooks/grep-guard.js` and `hooks/bash-guard.js`,
+then re-run `bash install.sh` to sync the changes.
 
 ```js
-// grep-guard.js / bash-guard.js
 const NON_CODE_PATHS = /(pkg\/mod|testdata|\.claude|\.git|\.task|docs?|migrations?|scripts?)\b/i;
 const NON_CODE_GLOBS = /\.(md|txt|log|json|jsonc|yaml|yml|toml|xml|sql|sh|proto|env|csv|html|mod|sum|lock)$/i;
 ```
