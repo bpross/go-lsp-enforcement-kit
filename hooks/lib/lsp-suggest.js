@@ -33,14 +33,17 @@ function buildSuggestion(symbols, indent = '  ') {
 }
 
 /**
- * Builds the JSON block response that a PreToolUse hook should emit to
- * block the tool call and explain the required LSP alternative.
+ * Builds a non-blocking warning that suggests LSP without preventing the
+ * underlying tool call. The hook still fires and the suggestion is shown,
+ * but Claude is free to proceed with rg/grep when LSP is genuinely the
+ * wrong tool (e.g. exploratory searches across multiple symbols).
  */
-function buildBlockResponse(symbols, suggestion) {
+function buildWarnResponse(symbols, suggestion) {
   return {
-    decision: 'block',
-    reason: `GO-LSP-FIRST: Pattern contains Go symbol(s) [${symbols.join(', ')}].\n\n${suggestion}`,
+    systemMessage:
+      `GO-LSP-FIRST hint: Pattern contains Go symbol(s) [${symbols.join(', ')}]. ` +
+      `For precise navigation prefer:\n${suggestion}`,
   };
 }
 
-module.exports = { buildSuggestion, buildBlockResponse };
+module.exports = { buildSuggestion, buildWarnResponse };

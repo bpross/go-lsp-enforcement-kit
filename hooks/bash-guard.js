@@ -3,9 +3,10 @@
 
 // bash-guard.js — PreToolUse hook (matcher: Bash)
 //
-// Blocks rg/grep Bash commands when the search pattern contains a Go code
-// symbol. Respects the rg-for-text-search convention: only intercepts when
-// the pattern is clearly a code identifier, not a string literal.
+// Warns (does not block) when an rg/grep Bash command contains what looks
+// like a Go code symbol, suggesting the LSP tool instead. The command
+// still proceeds — exploratory searches across multiple symbols and other
+// rg-friendly workflows are not interrupted.
 //
 // Allowed through:
 //   - git grep (fine to use)
@@ -16,7 +17,7 @@
 //   - rg on non-Go file type flags
 
 const { extractGoSymbols, ZERO_WIDTH } = require('./lib/go-symbols');
-const { buildSuggestion, buildBlockResponse } = require('./lib/lsp-suggest');
+const { buildSuggestion, buildWarnResponse } = require('./lib/lsp-suggest');
 
 const NON_CODE_TYPE_FLAGS =
   /(?:-t|--type[= ])\s*(yaml|yml|json|toml|xml|sql|markdown|md|sh|proto|txt|csv|html)/i;
@@ -66,9 +67,5 @@ process.stdin.on('end', () => {
   if (symbols.length === 0) process.exit(0);
 
   const suggestion = buildSuggestion(symbols, '  ');
-  process.stderr.write(
-    `\n⛔ GO-LSP-FIRST: rg/grep blocked — Go symbol(s) detected: ${symbols.join(', ')}\n` +
-    `gopls is connected. Use LSP for precise code navigation:\n${suggestion}\n\n`,
-  );
-  console.log(JSON.stringify(buildBlockResponse(symbols, suggestion)));
+  console.log(JSON.stringify(buildWarnResponse(symbols, suggestion)));
 });

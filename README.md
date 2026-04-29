@@ -5,16 +5,20 @@ instead of `rg`/`Grep`. Works across Claude Code, Codex, and opencode.
 
 ## What it does
 
+The hooks **warn but do not block** — searches still execute, but the agent
+sees a hint suggesting LSP for precise navigation. Exploratory searches and
+multi-symbol scans where rg is genuinely the right tool are not interrupted.
+
 | Trigger | Pattern type | Action |
 |---------|-------------|--------|
-| `Grep` tool | PascalCase / camelCase symbol | ⛔ Blocked → suggests `LSP workspaceSymbol` or `findReferences` |
-| `Bash` with `rg`/`grep` | PascalCase / camelCase symbol | ⛔ Blocked → suggests `LSP goToDefinition` or `findReferences` |
-| Either | Quoted string literal | ✅ Allowed (log/error message search) |
-| Either | `SCREAMING_SNAKE` constant | ✅ Allowed |
-| Either | Short all-lowercase word | ✅ Allowed (package names, field keys) |
-| Either | Non-code file type (`.yaml`, `.sql`, `.proto`, `.md`, …) | ✅ Allowed |
-| Either | Go module cache (`pkg/mod`) | ✅ Allowed |
-| Bash | `git grep` | ✅ Allowed |
+| `Grep` tool | PascalCase / camelCase symbol | ⚠️  Warning → suggests `LSP workspaceSymbol` or `findReferences` |
+| `Bash` with `rg`/`grep` | PascalCase / camelCase symbol | ⚠️  Warning → suggests `LSP goToDefinition` or `findReferences` |
+| Either | Quoted string literal | ✅ Silent (log/error message search) |
+| Either | `SCREAMING_SNAKE` constant | ✅ Silent |
+| Either | Short all-lowercase word | ✅ Silent (package names, field keys) |
+| Either | Non-code file type (`.yaml`, `.sql`, `.proto`, `.md`, …) | ✅ Silent |
+| Either | Go module cache (`pkg/mod`) | ✅ Silent |
+| Bash | `git grep` | ✅ Silent |
 
 ## Agent support
 

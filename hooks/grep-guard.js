@@ -3,8 +3,10 @@
 
 // grep-guard.js — PreToolUse hook (matcher: Grep)
 //
-// Blocks the built-in Grep tool when the search pattern looks like a Go
-// code symbol. Suggests the LSP tool instead for precise navigation.
+// Warns (does not block) when the Grep search pattern looks like a Go code
+// symbol, suggesting the LSP tool for precise navigation. The Grep call
+// still proceeds — exploratory searches across multiple symbols, full-text
+// scans, and other rg-friendly workflows are not interrupted.
 //
 // Allowed through:
 //   - Non-code file globs (.md, .yaml, .sql, .proto, .json, ...)
@@ -15,7 +17,7 @@
 //   - All-lowercase short words (package names, log field keys)
 
 const { extractGoSymbols } = require('./lib/go-symbols');
-const { buildSuggestion, buildBlockResponse } = require('./lib/lsp-suggest');
+const { buildSuggestion, buildWarnResponse } = require('./lib/lsp-suggest');
 
 const NON_CODE_GLOBS = /\.(md|txt|log|json|jsonc|yaml|yml|toml|xml|sql|sh|proto|env|csv|html|mod|sum|lock)$/i;
 const NON_CODE_PATHS = /(pkg\/mod|testdata|\.claude|\.git|\.task|docs?|migrations?|scripts?)\b/i;
@@ -40,9 +42,5 @@ process.stdin.on('end', () => {
   if (symbols.length === 0) process.exit(0);
 
   const suggestion = buildSuggestion(symbols, '  ');
-  process.stderr.write(
-    `\n⛔ GO-LSP-FIRST: Grep blocked — Go symbol(s) detected: ${symbols.join(', ')}\n` +
-    `gopls is connected. Use LSP for precise code navigation:\n${suggestion}\n\n`,
-  );
-  console.log(JSON.stringify(buildBlockResponse(symbols, suggestion)));
+  console.log(JSON.stringify(buildWarnResponse(symbols, suggestion)));
 });
